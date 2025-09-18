@@ -4,5 +4,5 @@
 This is my first Jupyter notebook project. With this I'm trying out the Jupyter notebook features
 
 ## How to use
-Very simple. You dont need to know anything as the current code is simple print statmen only 
+You can run the notebook without any prior experience. The current code only contains a basic print statement, so just open the notebook and execute the cells to see the output.
 
