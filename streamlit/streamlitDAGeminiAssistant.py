@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import openai
+import google.generativeai as genai
 import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
@@ -8,15 +8,15 @@ import datetime
 import base64
 from io import BytesIO
 
-
 st.set_page_config(
     page_title="Ask Your CSV",
     page_icon="📊",
     layout="wide"
 )
 
-# Initialize OpenAI client
-#client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# Initialize Gemini client
+# genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+genai.configure(api_key="AIzaSyD0-sBqoWI-p4QPmlSBvOmYCQp_uPQP6yE")
 
 # Helper function for export
 def export_conversation():
@@ -212,28 +212,29 @@ if st.session_state.df is not None:
             message_placeholder = st.empty()
             with st.spinner("Analyzing your data..."):
                 try:
-                    # Get conversation history for context
-                    messages = [{"role": "system", "content": system_prompt}]
+                    # Prepare conversation history for Gemini
+                    conversation_history = system_prompt + "\n\n"
                     
                     # Include last 3 exchanges for context
                     for msg in st.session_state.messages[-6:]:
+                        role = "User" if msg["role"] == "user" else "Assistant"
                         content = msg["content"]
                         # Truncate long messages in history to save tokens
                         if len(content) > 500:
                             content = content[:500] + "..."
-                        messages.append({"role": msg["role"], "content": content})
+                        conversation_history += f"{role}: {content}\n"
                     
-                    messages.append({"role": "user", "content": user_input})
+                    conversation_history += f"User: {user_input}"
                     
-                    response = "SAMPLE RESPOSE"  # Placeholder for actual API call
-                    # response = client.chat.completions.create(
-                    #     model="gpt-4.1",
-                    #     messages=messages,
-                    #     temperature=0.1,
-                    #     max_tokens=1500
-                    # )
+                    # Initialize Gemini model (uncomment when API key is available)
+                    model = genai.GenerativeModel('gemini-pro')
+                    # model = genai.GenerativeModel('gemini-1.5-pro')
+                    #model = genai.GenerativeModel('gemini-1.0-pro')
+                    response = model.generate_content(conversation_history)
+                    reply = response.text
                     
-                    reply = response.choices[0].message.content
+                    # reply = "SAMPLE RESPONSE"  # Placeholder for actual API call
+                    
                     message_placeholder.markdown(reply)
                     
                     # Try to execute any code in the response
@@ -306,9 +307,6 @@ if st.session_state.df is not None:
                             "content": reply
                         })
                     
-                except openai.APIError as e:
-                    st.error(f"OpenAI API Error: {str(e)}")
-                    st.info("Please check your API key and try again.")
                 except Exception as e:
                     st.error(f"Error generating response: {str(e)}")
                     st.info("Please try again or rephrase your question.")
